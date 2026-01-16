@@ -42,7 +42,17 @@ try:
     st.subheader("📈📉항목별 분포 그래프")
 
     column_names = df.columns.tolist()
-    selected_col = st.selectbox("분석할 항목을 선택하세요 : ", column_names)
+
+    default_column = "급여"
+
+    try :
+        default_index = column_names.index(default_column)
+    except ValueError :
+        default_index = 0
+
+    selected_col = st.selectbox("분석할 항목을 선택하세요 : ", column_names, index = default_index)
+    
+    # selected_col = st.selectbox("분석할 항목을 선택하세요 : ", column_names)
 
     if selected_col:
         # Streamlit 권장 방식 (fig, ax 명시)
