@@ -7,33 +7,30 @@ import numpy as np
 import os
 
 # ==========================================================
-# 1. 폰트 설정 (이 영역이 가장 먼저 실행되어야 합니다)
+# 1. 폰트 설정
 # ==========================================================
 font_path = os.path.join(os.getcwd(), "NanumGothic.ttf")
 
 if os.path.exists(font_path):
-    # 폰트 등록
     prop = fm.FontProperties(fname=font_path)
     plt.rcParams['font.family'] = prop.get_name()
     plt.rcParams['axes.unicode_minus'] = False
     fm.fontManager.addfont(font_path)
     plt.rc('font', family=prop.get_name())
 else:
-    # 로컬 환경(Windows) 배려: 나눔고딕이 없으면 맑은 고딕 시도
     plt.rc('font', family='Malgun Gothic')
     plt.rcParams['axes.unicode_minus'] = False
 
 # ==========================================================
-# 2. 데이터 분석 로직 시작
+# 2. 데이터 분석 로직
 # ==========================================================
 st.title("🧮국세청 근로소득 데이터 분석")
 
 file_path = "./data/근로소득.csv"
 
 try:
-    # 한글 깨짐 방지를 위한 encoding 설정
+    # 1. 데이터 불러오기
     df = pd.read_csv(file_path, encoding='cp949') 
-    
     st.success("데이터 로딩을 성공했습니다.")
 
     st.subheader("데이터 확인하기")
@@ -41,42 +38,36 @@ try:
 
     st.subheader("📈📉항목별 분포 그래프")
 
-    column_names = df.columns.tolist()
-
     # -----------------------------------------------------------
-    # [수정된 부분] 초기 기본값 설정 로직
+    # [수정된 부분] 숫자형 데이터(int, float)만 걸러내는 로직
+    # 이렇게 하면 문자열 데이터가 그래프에 들어가는 것을 원천 차단합니다.
     # -----------------------------------------------------------
-    default_column = "급여"  # 처음에 보여주고 싶은 컬럼명 (CSV 헤더와 일치해야 함)
+    numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
-    try:
-        default_index = column_names.index(default_column)
-    except ValueError:
-        default_index = 0 # "급여"라는 이름이 없으면 첫 번째 컬럼 선택
-    
-    # [핵심 수정] index=default_index를 추가해서 기본값을 적용했습니다.
-    selected_col = st.selectbox("분석할 항목을 선택하세요 : ", column_names, index=default_index)
+    if len(numeric_columns) == 0:
+        st.warning("데이터에 숫자형 컬럼이 하나도 없습니다. 엑셀 파일의 숫자에 쉼표(,)가 포함되어 있는지 확인해주세요.")
+    else:
+        # 숫자 컬럼 중에서만 선택하게 함 (기본값은 리스트의 첫 번째 숫자 컬럼)
+        selected_col = st.selectbox("분석할 항목을 선택하세요 (숫자 데이터만 표시됨): ", numeric_columns)
 
-    if selected_col:
-        # Streamlit 권장 방식 (fig, ax 명시)
-        fig, ax = plt.subplots(figsize=(10, 5))
-        
-        try:
-            # 그래프 그리기
-            sns.histplot(df[selected_col], ax=ax, color="#9932CC")
+        if selected_col:
+            fig, ax = plt.subplots(figsize=(10, 5))
             
-            # 한글 제목 및 라벨 설정
-            ax.set_title(f"[{selected_col}] 분포 확인")
-            ax.set_xlabel(selected_col)
-            ax.set_ylabel("빈도수")
-            
-            # 최종 출력
-            st.pyplot(fig)
-            
-        except Exception as e:
-            st.warning(f"이 항목은 그래프로 표현하기 적절하지 않습니다. (에러: {e})")
+            try:
+                # 그래프 그리기
+                sns.histplot(df[selected_col], ax=ax, color="#9932CC")
+                
+                ax.set_title(f"[{selected_col}] 분포 확인")
+                ax.set_xlabel(selected_col)
+                ax.set_ylabel("빈도수")
+                
+                st.pyplot(fig)
+                
+            except Exception as e:
+                st.error(f"그래프를 그리는 중 오류가 발생했습니다: {e}")
 
 except FileNotFoundError:
-    st.error(f"'{file_path}' 파일을 찾을 수 없습니다.")
+    st.error(f"'{file_path}' 파일을 찾을 수 없습니다. 경로를 확인해주세요.")
 except Exception as e:
     st.error(f"에러가 발생했습니다: {e}")
 
