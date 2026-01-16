@@ -43,14 +43,18 @@ try:
 
     column_names = df.columns.tolist()
 
-    default_column = "급여"
+    # -----------------------------------------------------------
+    # [수정된 부분] 초기 기본값 설정 로직
+    # -----------------------------------------------------------
+    default_column = "급여"  # 처음에 보여주고 싶은 컬럼명 (CSV 헤더와 일치해야 함)
 
-    try :
+    try:
         default_index = column_names.index(default_column)
-    except ValueError :
-        default_index = 0
+    except ValueError:
+        default_index = 0 # "급여"라는 이름이 없으면 첫 번째 컬럼 선택
     
-    selected_col = st.selectbox("분석할 항목을 선택하세요 : ", column_names)
+    # [핵심 수정] index=default_index를 추가해서 기본값을 적용했습니다.
+    selected_col = st.selectbox("분석할 항목을 선택하세요 : ", column_names, index=default_index)
 
     if selected_col:
         # Streamlit 권장 방식 (fig, ax 명시)
